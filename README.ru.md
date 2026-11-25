@@ -340,7 +340,7 @@ curl.exe --data-binary "@one-cycle.mp4" -H "Content-Type: video/mp4" `
 |---|---|---|---|
 | **Веб** | Движок отдаёт интерфейс на `127.0.0.1:8870` | Работает целиком, с настоящим анализом на GPU (скриншоты и GIF выше) | этот README |
 | **Windows** | `Qolda.exe`: окно .NET WinForms + WebView2 поверх того же движка. `Qolda.exe --attach-port 8870` подключается к уже запущенному движку | Собрано и запущено вместе с CUDA-движком на Windows 11 ([отчёт](reports/platforms/windows-candidate.md)) | [docs/BUILD-WINDOWS.md](docs/BUILD-WINDOWS.md) |
-| **Android** | Приложение `net.qolda.offline` (API 28+, arm64) и C++ AAR, который через LiteRT GPU delegate запускает RTMPose и классификатор полностью офлайн | Движок проверен на OnePlus CPH2399 (Mali-G77), все узлы на GPU ([отчёт](reports/ml/gpu-handoff/M4.1-android-device.md)); новый интерфейс ещё не подключён к нативному мосту | [docs/BUILD-ANDROID.md](docs/BUILD-ANDROID.md) |
+| **Android** | Приложение `net.qolda.offline` (API 28+, arm64) и C++ AAR, который через LiteRT GPU delegate запускает RTMPose и классификатор полностью офлайн | Движок проверен на OnePlus CPH2399 (Mali-G77), все узлы на GPU ([отчёт](reports/ml/gpu-handoff/M4.1-android-device.md)). Debug APK с моделью A и новым интерфейсом, подключённым к нативному мосту, собран из этой репы и прошёл проверку пакета; следующий шаг — прогон на телефоне | [docs/BUILD-ANDROID.md](docs/BUILD-ANDROID.md) |
 
 ## Структура репозитория
 

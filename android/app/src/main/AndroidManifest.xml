@@ -11,6 +11,11 @@
                  android:icon="@drawable/ic_qolda"
                  android:theme="@style/Theme.Qolda"
                  android:usesCleartextTraffic="false">
+        <!-- Target SDK 31+: vendor OpenCL is visible to the LiteRT GPU delegate only when declared
+             (Adreno/Snapdragon phones such as the Galaxy S25). Optional, so other GPUs keep OpenGL ES. -->
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL-car.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false" />
         <activity android:name=".MainActivity" android:exported="true"
                   android:configChanges="orientation|screenLayout|screenSize|keyboardHidden">
             <intent-filter>

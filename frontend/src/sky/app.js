@@ -6,6 +6,12 @@ import { GEOLOGICA } from "./font.js";
 import { store } from "../core/store.js";
 import { engine, clipHash, MAX_BYTES, TYPES } from "../core/api.js";
 import { dayKey, lastDays, byDay, streak, sum, countsOf } from "../domain/stats.js";
+import { profile } from "../platform/profile.js";
+import { androidBridge } from "../platform/android.js";
+
+// Inside the Android app the analyzer is the phone's own GPU engine behind the native bridge
+// (android/ANDROID_BRIDGE.md): the system picker hands over a token, never the file itself.
+const PHONE = () => profile.name === "android";
 
 const app = document.getElementById("app");
 const SVG = "http://www.w3.org/2000/svg";
@@ -149,8 +155,13 @@ view.today = (root, $) => {
 };
 
 // One check: instruction -> video -> consent and sending -> result. Kept across re-renders of the card.
-const flow = { step: 1, blob: null, type: "", consent: false, busy: false, error: "", ctrl: null, stream: null, rec: null, timer: 0 };
+const flow = { step: 1, blob: null, native: null, live: false, type: "", consent: false, busy: false, error: "", ctrl: null, stream: null, rec: null, timer: 0 };
 let last = null;
+/** A native selection belongs to one mounted check: give its grant back as soon as it is not needed. */
+function releaseNative() {
+  const v = flow.native; flow.native = null;
+  if (v) { try { androidBridge.release(v.token).catch(() => {}); } catch (_) { /* the Activity already dropped it */ } }
+}
 function stopCamera() {
   clearInterval(flow.timer); flow.timer = 0;
   if (flow.rec && flow.rec.state !== "inactive") { flow.rec.onstop = null; try { flow.rec.stop(); } catch (_) {} }
@@ -211,27 +222,55 @@ view.check = (root, $) => {
       flow.timer = setInterval(() => { flow.seconds += 1; const t = card.querySelector("[data-el=rectime]"); if (t) t.textContent = "Идёт запись · " + flow.seconds + " с из 30"; if (flow.seconds >= 30 && flow.rec) flow.rec.stop(); }, 1000);
     }, 1000);
   }
-  async function send() {
-    if (!flow.blob || !flow.consent || flow.busy) return;
-    flow.busy = true; flow.error = ""; flow.ctrl = new AbortController(); render();
-    const res = await engine.analyze(flow.blob, flow.type, store.state.prefs.model, flow.ctrl.signal);
-    flow.busy = false; flow.ctrl = null;
-    if (res.kind === "ok") {
-      const list = res.data.attempts || [];
-      if (!list.length) return fail("Рука не видна достаточно хорошо для оценки. Попытка не засчитана.");
-      const hash = await clipHash(flow.blob), dup = store.addAttempts(res.data, hash), a = list[0];
-      last = { label: a.label, confidence: typeof a.confidence === "number" ? a.confidence : null, reason: a.reason || null, model: res.data.model || store.state.prefs.model, dup, url: flow.url, type: flow.type };
-      flow.url = null; flow.step = 1; flow.blob = null; flow.consent = false; engine.check(); return go("result");
-    }
+  // A final, well-formed answer (file or live) goes into the history once, keyed by the clip's hash.
+  function finish(data, hash) {
+    const list = data.attempts || [];
+    if (!list.length) { releaseNative(); return fail("Рука не видна достаточно хорошо для оценки. Попытка не засчитана."); }
+    const dup = store.addAttempts(data, hash), a = list[0];
+    last = { label: a.label, confidence: typeof a.confidence === "number" ? a.confidence : null, reason: a.reason || null, model: data.model || store.state.prefs.model, dup, url: flow.url, type: flow.type };
+    flow.url = null; flow.step = 1; flow.blob = null; releaseNative(); flow.consent = false; engine.check(); go("result");
+  }
+  function explain(res) {
     if (res.kind === "canceled") return fail("Отправка отменена.");
     if (res.kind === "offline") return fail("Нет связи с локальным анализатором. Проверьте, что движок запущен, и восстановите подключение.", true);
     const code = res.code || "";
     if (code === "no_pose") return fail("Рука не видна достаточно хорошо для оценки. Попытка не засчитана.");
-    if (res.status === 503 || code === "model_unavailable") return fail("Анализатор недоступен: модель не загружена. Подключите локальный движок с моделью.", true);
-    if (res.status === 429 || code === "busy") return fail("Анализатор занят. Попробуйте ещё раз через минуту.");
-    if (code === "duration" || code === "too_long") return fail("Видео длиннее 30 секунд. Запишите один цикл.");
+    if (code.includes("camera")) return fail("Камера недоступна. Можно выбрать готовое видео из галереи.");
+    if (res.status === 503 || code === "model_unavailable") return fail(PHONE()
+      ? "Модель на этом телефоне недоступна: нужен графический ускоритель с поддержкой LiteRT GPU."
+      : "Анализатор недоступен: модель не загружена. Подключите локальный движок с моделью.", true);
+    if (res.status === 429 || code === "busy" || code === "engine_busy") return fail("Анализатор занят. Попробуйте ещё раз через минуту.");
+    if (code === "duration" || code === "too_long" || code === "duration_limit") return fail("Видео длиннее 30 секунд. Запишите один цикл.");
     if (code === "invalid_video" || res.status === 415 || res.status === 422) return fail("Видео не удалось прочитать. Запишите ещё раз.");
     fail("Анализ не выполнен. Код: " + (code || res.status));
+  }
+  async function send() {
+    if (!(flow.blob || flow.native) || !flow.consent || flow.busy) return;
+    flow.busy = true; flow.error = ""; flow.ctrl = new AbortController(); render();
+    const res = await engine.analyze(flow.native || flow.blob, flow.type, PHONE() ? "scratch" : store.state.prefs.model, flow.ctrl.signal);
+    flow.busy = false; flow.ctrl = null;
+    if (res.kind === "ok") return finish(res.data, flow.native ? flow.native.hash : await clipHash(flow.blob));
+    explain(res);
+  }
+  // Phone: the system picker owns the file; only a token, name, type, size and hash come back.
+  async function pickNative() {
+    if (flow.busy || flow.live) return;
+    flow.error = "";
+    let res; try { res = await androidBridge.pick(); } catch (_) { res = { kind: "error", status: 503, code: "picker_unavailable" }; }
+    if (res.kind === "ok") { releaseNative(); flow.native = res.video; flow.type = res.video.type; flow.step = 3; return render(); }
+    if (res.kind === "canceled") return render();
+    fail(res.code === "bad_response" ? "Видео не удалось прочитать. Выберите другой файл." : "Не удалось открыть выбор видео.");
+  }
+  // Phone: the native camera screen records one cycle and returns the final answer itself.
+  async function liveNative() {
+    if (flow.busy || flow.live) return;
+    if (!flow.consent) return fail("Сначала отметьте согласие ниже: видео анализируется на этом телефоне.");
+    flow.error = ""; flow.live = true; flow.ctrl = new AbortController(); render();
+    let res; try { res = await androidBridge.liveStart("scratch", flow.ctrl.signal); } catch (_) { res = { kind: "error", status: 503, code: "model_unavailable" }; }
+    flow.live = false; flow.ctrl = null;
+    if (res.kind === "ok") return finish(res.data, res.key);
+    if (res.kind === "canceled") return render();
+    explain(res);
   }
   const msg = () => flow.error ? '<p role="alert" class="q-msg' + (flow.errorStop ? " q-msg--stop" : "") + '">' + flow.error.replace(/[<&]/g, "") + "</p>" : "";
   function render() {
@@ -252,24 +291,40 @@ view.check = (root, $) => {
       const stop = card.querySelector("[data-act=stop]"); if (stop) stop.addEventListener("click", () => flow.rec && flow.rec.stop());
       return;
     }
-    const has = !!flow.blob, ready = has && flow.consent && !flow.busy;
-    const size = has ? (flow.blob.size / 1048576).toFixed(1).replace(".", ",") + " МБ" : "";
+    if (flow.live) {
+      card.replaceChildren(...frag('<h2 class="t-l">Камера открыта</h2>' +
+        '<p class="t-m" role="status">Сядьте боком и выполните одно разгибание локтя. Запись остановится сама через 30 секунд или по кнопке в окне камеры.</p>' +
+        '<div data-s="display: flex; gap: 12px; margin-top: auto"><button class="q-btn q-btn--ghost" type="button" data-act="cancel">Отмена</button></div>'));
+      card.querySelector("[data-act=cancel]").addEventListener("click", () => { try { androidBridge.liveCancel().catch(() => {}); } catch (_) {} if (flow.ctrl) flow.ctrl.abort(); });
+      return;
+    }
+    const phone = PHONE(), has = !!(flow.blob || flow.native), ready = has && flow.consent && !flow.busy;
+    const bytes = flow.native ? flow.native.size : flow.blob ? flow.blob.size : 0;
+    const size = has ? (bytes / 1048576).toFixed(1).replace(".", ",") + " МБ" : "";
+    const sources = phone
+      ? '<div class="q-drop" data-el="drop" data-s="border-radius: 28px; border: 2px dashed rgba(12,22,51,.28); padding: 32px 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; background: #F4F6FB"><div data-s="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px"><button class="q-btn" type="button" data-act="live">Снять один цикл</button><button class="q-btn q-btn--white" type="button" data-act="pick">Выбрать видео</button></div><p class="t-2" data-s="font-size: 16px">Камера откроется на весь экран. Из галереи — MP4 или WebM до 30 секунд</p></div>' +
+        '<p class="t-small">Чтобы снимать, сначала отметьте согласие ниже. Выбрать готовое видео можно без доступа к камере.</p>'
+      : '<div class="q-drop" data-el="drop" data-s="border-radius: 28px; border: 2px dashed rgba(12,22,51,.28); padding: 36px 28px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; background: #F4F6FB"><div data-s="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px"><button class="q-btn" type="button" data-act="record">Записать один цикл</button><button class="q-btn q-btn--white" type="button" data-act="pick">Выбрать видео</button></div><p class="t-2" data-s="font-size: 16px">или перетащите файл сюда. MP4 или WebM, до 30 секунд</p><input type="file" accept="video/mp4,video/webm" hidden></div>' +
+        '<p class="t-small">Перед записью идёт обратный отсчёт. Камера недоступна? Можно выбрать готовый файл: разрешение камеры для этого не нужно.</p>';
+    const where = phone ? "Я понимаю: видео анализируется только на этом телефоне." : 'Я понимаю: видео обрабатывает только локальный анализатор по адресу <span data-el="url"></span>.';
     card.replaceChildren(...frag('<h2 class="t-l">' + (has ? "Отправка на анализ" : "Видео одного цикла") + "</h2>" +
       (has
         ? '<div data-s="border-radius: 28px; padding: 24px 28px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; background: #F4F6FB"><p><strong data-s="font-weight: 600">Выбрано видео</strong><br><span class="t-small">' + (flow.type === "video/mp4" ? "MP4" : "WebM") + " · " + size + '</span></p><button class="q-btn q-btn--small q-btn--white" type="button" data-act="again">Выбрать другое</button></div>'
-        : '<div class="q-drop" data-el="drop" data-s="border-radius: 28px; border: 2px dashed rgba(12,22,51,.28); padding: 36px 28px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; background: #F4F6FB"><div data-s="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px"><button class="q-btn" type="button" data-act="record">Записать один цикл</button><button class="q-btn q-btn--white" type="button" data-act="pick">Выбрать видео</button></div><p class="t-2" data-s="font-size: 16px">или перетащите файл сюда. MP4 или WebM, до 30 секунд</p><input type="file" accept="video/mp4,video/webm" hidden></div>' +
-          '<p class="t-small">Перед записью идёт обратный отсчёт. Камера недоступна? Можно выбрать готовый файл: разрешение камеры для этого не нужно.</p>') +
+        : sources) +
       msg() +
-      '<label data-s="display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border-radius: 20px; background: #F4F6FB; cursor: pointer"><input type="checkbox" data-s="width: 26px; height: 26px; margin: 1px 0 0; flex: none; accent-color: #1F3FE6"><span data-s="font-size: 16px">Я понимаю: видео обрабатывает только локальный анализатор по адресу <span data-el="url"></span>. Оно не сохраняется и не уходит в интернет.</span></label>' +
+      '<label data-s="display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; border-radius: 20px; background: #F4F6FB; cursor: pointer"><input type="checkbox" data-s="width: 26px; height: 26px; margin: 1px 0 0; flex: none; accent-color: #1F3FE6"><span data-s="font-size: 16px">' + where + ' Оно не сохраняется и не уходит в интернет.</span></label>' +
       '<div data-s="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: auto"><button class="q-btn q-btn--ghost" type="button" data-act="back">' + (flow.busy ? "Отмена" : "Назад") + '</button><button class="q-btn' + (ready ? "" : " is-off") + '" type="button" data-act="send"' + (ready ? "" : ' aria-disabled="true"') + ">" + (flow.busy ? "Анализ…" : "Отправить на анализ") + '<span class="q-joint">' + ARROW + '</span></button><span data-s="font-size: 15px; color: #3A4668">' + (flow.busy ? "" : !has ? "Сначала выберите или запишите видео" : !flow.consent ? "Отметьте согласие, чтобы отправить" : "") + "</span></div>"));
-    card.querySelector("[data-el=url]").textContent = String(store.state.prefs.engineUrl).replace(/^https?:\/\//, "");
+    const urlEl = card.querySelector("[data-el=url]"); if (urlEl) urlEl.textContent = String(store.state.prefs.engineUrl).replace(/^https?:\/\//, "");
     const box = card.querySelector("input[type=checkbox]"); box.checked = flow.consent; box.disabled = flow.busy;
-    box.addEventListener("change", () => { flow.consent = box.checked; render(); });
-    card.querySelector("[data-act=back]").addEventListener("click", () => { if (flow.busy) return flow.ctrl && flow.ctrl.abort(); flow.error = ""; if (has) { dropClip(); flow.blob = null; flow.step = 2; } else flow.step = 1; render(); });
+    box.addEventListener("change", () => { flow.consent = box.checked; if (flow.error && flow.consent) flow.error = ""; render(); });
+    card.querySelector("[data-act=back]").addEventListener("click", () => { if (flow.busy) return flow.ctrl && flow.ctrl.abort(); flow.error = ""; if (has) { dropClip(); flow.blob = null; releaseNative(); flow.step = 2; } else flow.step = 1; render(); });
     card.querySelector("[data-act=send]").addEventListener("click", send);
-    const again = card.querySelector("[data-act=again]"); if (again) again.addEventListener("click", () => { dropClip(); flow.blob = null; flow.step = 2; flow.error = ""; render(); });
+    const again = card.querySelector("[data-act=again]"); if (again) again.addEventListener("click", () => { dropClip(); flow.blob = null; releaseNative(); flow.step = 2; flow.error = ""; render(); });
     const drop = card.querySelector("[data-el=drop]");
-    if (drop) {
+    if (drop && phone) {
+      drop.querySelector("[data-act=pick]").addEventListener("click", pickNative);
+      drop.querySelector("[data-act=live]").addEventListener("click", liveNative);
+    } else if (drop) {
       const input = drop.querySelector("input[type=file]");
       drop.querySelector("[data-act=pick]").addEventListener("click", () => input.click());
       drop.querySelector("[data-act=record]").addEventListener("click", record);
@@ -280,8 +335,13 @@ view.check = (root, $) => {
     }
   }
   if (flow.step > 3) flow.step = 1;
+  if (flow.step === 3 && !flow.blob && !flow.native) flow.step = 2;
   render();
-  return () => { stopCamera(); flow.recording = ""; if (flow.ctrl) flow.ctrl.abort(); };
+  return () => {
+    stopCamera(); flow.recording = ""; if (flow.ctrl) flow.ctrl.abort();
+    if (flow.live) { try { androidBridge.liveCancel().catch(() => {}); } catch (_) {} flow.live = false; }
+    if (flow.native) { releaseNative(); if (flow.step === 3) flow.step = 2; }
+  };
 };
 
 view.result = (root, $) => {
@@ -377,12 +437,15 @@ view.cabinet = (root, $) => {
   url.value = prefs.engineUrl;
   const test = async () => { store.setPrefs({ engineUrl: url.value.trim() }); health.textContent = "Проверяю связь…"; await engine.check(); paintHealth(); paintStatus(root); };
   $("test").addEventListener("click", test); url.addEventListener("change", test); paintHealth();
+  // The phone analyses on its own GPU: there is no engine address to set.
+  if (!profile.engineSettings) { const row = url.closest(".q-field")?.parentElement; if (row) row.hidden = true; }
   const [calmBtn, keepBtn] = root.querySelectorAll(".q-toggle");
   toggle(calmBtn, prefs.calm, (v) => { store.setPrefs({ calm: v }); document.documentElement.classList.toggle("calm", v); });
   toggle(keepBtn, prefs.persist, (v) => store.setPrefs({ persist: v }));
   const stored = $("stored"), paintStored = () => { const d = store.state.data; stored.textContent = "Сейчас в истории: " + cycles(d.attempts.length) + ", отметок самочувствия: " + d.checkins.filter((c) => c.ease).length + "."; };
   paintStored();
   $("export").addEventListener("click", () => {
+    if (PHONE()) { androidBridge.exportData(store.exportData(), "qolda-" + dayKey(new Date()) + ".json").catch(() => {}); return; }
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(store.exportData(), null, 2)], { type: "application/json" }));
     a.download = "qolda-" + dayKey(new Date()) + ".json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });

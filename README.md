@@ -340,7 +340,7 @@ Real response for validation clip `05_02_01_01`:
 |---|---|---|---|
 | **Web** | The engine serves the UI at `127.0.0.1:8870` | Works end to end with real GPU analysis (screens and GIF above) | this README |
 | **Windows** | `Qolda.exe`: .NET WinForms + WebView2 window over the same engine. `Qolda.exe --attach-port 8870` opens a running engine | Built and launched with the CUDA engine on Windows 11 ([report](reports/platforms/windows-candidate.md)) | [docs/BUILD-WINDOWS.md](docs/BUILD-WINDOWS.md) |
-| **Android** | Host app `net.qolda.offline` (API 28+, arm64) and a C++ AAR that runs RTMPose and the classifier through the LiteRT GPU delegate, fully offline | Engine verified on a OnePlus CPH2399 (Mali-G77) with every node on the GPU ([report](reports/ml/gpu-handoff/M4.1-android-device.md)); the new UI is not yet wired to the native bridge | [docs/BUILD-ANDROID.md](docs/BUILD-ANDROID.md) |
+| **Android** | Host app `net.qolda.offline` (API 28+, arm64) and a C++ AAR that runs RTMPose and the classifier through the LiteRT GPU delegate, fully offline | Engine verified on a OnePlus CPH2399 (Mali-G77) with every node on the GPU ([report](reports/ml/gpu-handoff/M4.1-android-device.md)). A debug APK with model A and the new UI wired to the native bridge is built from this repo and passes the package checks; a run on a phone is next | [docs/BUILD-ANDROID.md](docs/BUILD-ANDROID.md) |
 
 ## Repository layout
 
