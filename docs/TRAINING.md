@@ -98,6 +98,17 @@ if ($LASTEXITCODE) { throw 'Inspect private E01 receipt: blocked or partial' }
 if ($LASTEXITCODE) { throw 'Inspect private E03 receipt' }
 ```
 
+**Отдельная проверка E01/E03 по людям (LOPO).** После подготовки приватных манифестов можно повторить опубликованные development-сравнения. В каждом из четырёх прогонов обучение идёт на троих, оценка — на четвёртом; исходный validation и закрытый test не читаются. Для E01 сначала нужен локальный прогон `ml.extra_e01` выше. Для E03 используется закреплённый исходник; исходные веса не заменяются.
+
+```powershell
+& $Py -B -m ml.e01_train_lopo --manifest "$Extras/E01/manifest.json"
+if ($LASTEXITCODE) { throw 'E01 LOPO did not complete' }
+& $Py -B -m ml.e03_train_lopo --manifest "$Extras/E03/manifest.json"
+if ($LASTEXITCODE) { throw 'E03 LOPO did not complete' }
+```
+
+Числа по разбиениям: [E01](../reports/ml/extra-e01-lopo.json) и [E03](../reports/ml/extra-e03-lopo.json). Эти прогоны не создают `promotion.json` и не дают автоматического допуска. [Как читать результаты и что доступно](EXTRA-EXERCISES.md).
+
 **E02/B и C — не запускать на публичном наборе.** B требует собственного E02 с двумя классами и раздельными людьми в train/validation. C стартует независимо от той же SLiM-базы, использует те же собственные строки и только допущенное расширение в train. Изменение B→C не означает дополнительное упражнение. Нужны provenance, права/согласие на локальное обучение и производные веса, закреплённые SHA, общие группы человека/исходной записи/семейства. Для них нет публичной ссылки и нет поставленных новых весов. Без передачи `python -B -m tools.model_intake` → `blocked_inputs`, код 2. [Почему три внешних набора кистей не заменяют E02](../reports/ml/model-intake/corpus-c-hand-sources.md).
 
 ## 5. Что сверять и передавать между машинами

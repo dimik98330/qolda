@@ -1,5 +1,7 @@
 # Qolda · клиент
 
+Текущие экраны анализа — E02. E01 и E03 имеют отдельный [контракт файлового API](../docs/contracts/extra-exercises.md), но не подключены к экрану выбора упражнения или дневному счётчику. [Что фактически проверили](../docs/EXTRA-EXERCISES.md#платформы-и-допуск).
+
 Клиент кейса SerIQ E02: один веб-интерфейс для сайта, Android и настольного приложения.
 Контракт анализатора — [`docs/contracts/api.md`](../docs/contracts/api.md), поведение интерфейса — [`docs/contracts/ui.md`](../docs/contracts/ui.md), дизайн-система — [`DESIGN.md`](DESIGN.md).
 

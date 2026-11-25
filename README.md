@@ -32,6 +32,7 @@
 - [How a check works](#how-a-check-works)
 - [Architecture](#architecture)
 - [The model](#the-model)
+- [Additional exercises: E01 and E03](#additional-exercises-e01-and-e03)
 - [Quick start](#quick-start)
 - [Train the model](#train-the-model)
 - [HTTP API](#http-api)
@@ -45,6 +46,8 @@
 ## What it does
 
 After a stroke, people repeat simple arm exercises at home for weeks, usually without anyone to tell them whether a rep counted. Qolda (Kazakh: *“in hand”*, *“support”*) closes that gap for one exercise, **E02: elbow extension**.
+
+The repo also documents [E01 (lifting an object) and E03 (wrist extension)](#additional-exercises-e01-and-e03) as separate development exercises, not shipped analysis modes.
 
 1. The person sits side-on to the camera and records **one cycle** (or picks a video file, up to 30 s).
 2. A **local engine** finds the elbow and wrist in every frame with RTMPose on the GPU, checks the track is good enough to judge, and a small temporal network decides whether the cycle was **complete**.
@@ -209,17 +212,20 @@ flowchart LR
 - A control trained on the visibility mask alone reached only 0.55 balanced accuracy, so the model uses the movement, not the missing frames.
 - Each held-out split is **one person**. Treat these numbers as proof that the pipeline works, not as clinical accuracy.
 
-<details>
-<summary><b>Also in the repo: research models for two more exercises</b></summary>
+- **E02 model B (research):** SLiM, last block fine-tuned, also scored 20/20 on that validation split. A is the shipped choice: same result with a much smaller model. [Comparison](reports/ml/forearm-v1/README.md).
 
-| Exercise | Approach | Development result | Status |
-|---|---|---|---|
-| E01, lifting an object | RTMPose, both arms, 48 phases, TCN | balanced accuracy 0.86 vs 0.59 baseline on 21 clips of an unseen person ([report](reports/ml/extra-e01.md)) | code and API, weights not shipped |
-| E03, wrist extension | small spatio-temporal CNN on RGB frame differences, 24 × 96 × 96 | 1.00 vs 0.50 baseline on 20 clips ([report](reports/ml/extra-e03.md)) | code and API, weights not shipped |
-| E02, model B | SLiM skeleton transformer (NTU60 pre-training), last block fine-tuned | same 20 / 20 as A ([report](reports/ml/forearm-v1/README.md)) | not used: A is 2 700× smaller with the same result |
+## Additional exercises: E01 and E03
 
-The engine only enables an extra exercise when a reviewed weight file is supplied ([contract](docs/contracts/extra-exercises.md)); otherwise it answers `503` and never substitutes an E02 result.
-</details>
+E02 is the shipped exercise. E01 and E03 each have their own training pipeline, baseline and file API. Their weights and local approvals are not shipped.
+
+| Exercise | Method and baseline | Development validation (one held-out person) | Leave-one-person-out (four people) | Availability |
+|---|---|---|---|---|
+| **E01 · Lifting an object** | RTMPose on both arms, 48 phases, temporal CNN vs. wrist lift-and-return rule | Balanced accuracy **85.91% vs. 58.64%**, 21/21 decisions | **80.71% vs. 69.88%**; decisions 73/82 vs. 74/82 | Research only. Not approved after a file check misclassified both planned examples; the model sees arm motion, not the object. [Report](reports/ml/extra-e01.md) |
+| **E03 · Wrist extension** | Small CNN on differences between RGB frames vs. a motion baseline | **100% vs. 50%**, 20/20 decisions for both | **86.25% vs. 82.59%** with abstentions; decisions 73/81 vs. 68/81. Without abstentions: 91.25% vs. 91.28%. | Local file API demonstrated on the Web engine and in a private Windows add-on. No shipped UI, live mode or Android inference. [Report](reports/ml/extra-e03.md) |
+
+The four-fold evaluation retrains on three people and evaluates on the fourth, using only the original training cohort. An abstention counts as a miss for the clip's true class in the reported balanced accuracy. On E03's hardest fold, the model recognized **none of 10 complete cycles**. These are development results, not clinical accuracy or evidence that the models measure joint angles.
+
+[Platform status and evidence](docs/EXTRA-EXERCISES.md) · [Training instructions](docs/TRAINING.md#4-обучение-и-экспорт) · [File API contract](docs/contracts/extra-exercises.md)
 
 ## Quick start
 
@@ -274,6 +280,8 @@ Any side-on video of one elbow extension works. To reproduce the demo, take vali
 ```
 
 ## Train the model
+
+This section trains E02. For the separate E01/E03 pipelines and cross-person checks, see [Training](docs/TRAINING.md#4-обучение-и-экспорт).
 
 Everything below runs from the repo root. Datasets, pose caches and checkpoints stay in `$D`, outside Git.
 
@@ -334,6 +342,8 @@ Real response for validation clip `05_02_01_01`:
 
 `label` is `complete`, `incomplete` or `uncertain` (then `reason` is `low_confidence`, `low_visibility` or `unscorable`). No pose at all gives empty `attempts` and the warning `no_pose`. Errors: `400 invalid_request`, `411`, `413 too_large`, `415 unsupported_media`, `422 invalid_video / duration_limit`, `503 model_unavailable / engine_busy`.
 
+The table above is the E02 API. The extra-exercise catalog (`GET /api/v1/exercises`) and file routes (`POST /api/v1/exercises/E01/analyze`, `POST /api/v1/exercises/E03/analyze`) have a [separate contract](docs/contracts/extra-exercises.md). An unconfigured exercise returns `503 model_unavailable`, not an E02 verdict.
+
 ## Windows and Android
 
 | Platform | What is there | Status | Build guide |
@@ -341,6 +351,8 @@ Real response for validation clip `05_02_01_01`:
 | **Web** | The engine serves the UI at `127.0.0.1:8870` | Works end to end with real GPU analysis (screens and GIF above) | this README |
 | **Windows** | `Qolda.exe`: .NET WinForms + WebView2 window over the same engine. `Qolda.exe --attach-port 8870` opens a running engine | Built and launched with the CUDA engine on Windows 11 ([report](reports/platforms/windows-candidate.md)) | [docs/BUILD-WINDOWS.md](docs/BUILD-WINDOWS.md) |
 | **Android** | Host app `net.qolda.offline` (API 28+, arm64) and a C++ AAR that runs RTMPose and the classifier through the LiteRT GPU delegate, fully offline | Engine verified on a OnePlus CPH2399 (Mali-G77) with every node on the GPU ([report](reports/ml/gpu-handoff/M4.1-android-device.md)). A debug APK with model A and the new UI wired to the native bridge is built from this repo and passes the package checks; a run on a phone is next | [docs/BUILD-ANDROID.md](docs/BUILD-ANDROID.md) |
+
+The table describes E02. For E01/E03, see [which platforms actually ran a file](docs/EXTRA-EXERCISES.md#платформы-и-допуск).
 
 ## Repository layout
 
@@ -376,7 +388,7 @@ qolda/
 ## Limitations
 
 - A hackathon prototype, **not a medical device** and not a substitute for a therapist.
-- One exercise (E02), right arm, side-on camera, one person in frame.
+- The standard app analyzes E02: right arm, side-on camera, one person in frame. E01/E03 are separate [development tracks](docs/EXTRA-EXERCISES.md).
 - Validated on one unseen person (20 clips). Real homes differ from the dataset's setting.
 - Full analysis needs an NVIDIA GPU; there is deliberately no CPU fallback in the shipped engine.
 
@@ -386,6 +398,7 @@ Detailed docs are in Russian.
 
 | Topic | File |
 |---|---|
+| E01 / E03 evidence and platform status | [docs/EXTRA-EXERCISES.md](docs/EXTRA-EXERCISES.md) |
 | Specification | [docs/SPEC.md](docs/SPEC.md) |
 | Architecture notes | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Data card | [docs/DATA-CARD.md](docs/DATA-CARD.md) |

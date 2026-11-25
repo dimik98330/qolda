@@ -1,5 +1,7 @@
 # Qolda Desktop for Windows (T-009)
 
+The standard window is for E02. E03 has a separately verified local file API on Windows with an approved private model; this is not an exercise screen in `Qolda.exe`. E01 was not approved. [Exercise availability](../docs/EXTRA-EXERCISES.md#платформы-и-допуск).
+
 `Qolda.exe` is a WinForms/WebView2 x64 application, not a shortcut to a browser. It opens the existing local Qolda frontend served by `backend.api` and uses that same instance to analyze videos. The desktop distribution ships a self-contained .NET client and WebView2 loader; it requires the installed Microsoft Edge WebView2 Runtime and a separate NVIDIA CUDA engine. No installer, weights, Python, CUDA libraries, raw videos, or app data are included in the client ZIP.
 
 ## Run the portable pair

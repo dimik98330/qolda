@@ -1,5 +1,7 @@
 # Model card · Qolda E02 model A
 
+This card describes the shipped **E02/A** weights. The separate [E01 and E03 development models](../docs/EXTRA-EXERCISES.md) have their own data, evaluation and runtime approval; their checkpoints are not in this repository.
+
 **English** · [Русский](#русский)
 
 | | |

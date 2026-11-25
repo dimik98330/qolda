@@ -1,5 +1,7 @@
 # Android native bridge v1 — integration for the shared frontend
 
+The Android bridge analyzes E02 only. It does not expose E01/E03 inference or route them to a local PC. See [exercise availability](../docs/EXTRA-EXERCISES.md#платформы-и-допуск).
+
 Android packages the current common `frontend/index.html`, `frontend/src/**`, `frontend/styles/**` and its local assets. It does not replace those screens. The Android copy of `index.html` selects `seriq-profile=android` and `seriq-analyzer=ondevice` and loads the platform bridge before `src/main.js`. The common frontend owns onboarding, cabinet, settings, trackers, results and history. Android promises no account server or network. Browser/Windows keep their existing transports.
 
 ## JavaScript API

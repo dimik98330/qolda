@@ -1,5 +1,7 @@
 # Qolda Android (T-010)
 
+The native analysis path is E02 only. There are no E01/E03 weights or inference in the APK/AAR, and the app does not send these exercises to a PC. [Exercise availability](../docs/EXTRA-EXERCISES.md#платформы-и-допуск).
+
 This module supplies an Android host and native file/live E02 engine for the shared frontend; it does not create a separate product UI. For integration see [ANDROID_BRIDGE.md](ANDROID_BRIDGE.md). Status and physical evidence are kept in [android-candidate.md](../reports/platforms/android-candidate.md).
 
 ## Build

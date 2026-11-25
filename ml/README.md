@@ -1,5 +1,7 @@
 # SerIQ E02 ML
 
+E01 (object lifting) and E03 (wrist extension) have independent development pipelines in `extra_e01.py` and `extra_e03.py`. See the [evaluation and availability summary](../docs/EXTRA-EXERCISES.md) and [reproduction commands](../docs/TRAINING.md#4-обучение-и-экспорт). They are not E02 model variants.
+
 Local research prototype, not a clinical assessment. The task is binary clip classification (`incomplete`, `complete`) given the pose trajectory of one E02 clip. Missing pose produces `label=None` with a reason, not an incomplete classification. See the [forearm-only results](../reports/ml/forearm-v1/experiment.md) and [evaluation notes](../reports/ml/forearm-v1/README.md). The historical strict-triplet attempts remain in `reports/ml/`; fixture parameters are not trained artifacts.
 
 ## Environment
