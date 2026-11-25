@@ -85,7 +85,7 @@ if ($LASTEXITCODE) { throw 'E02 development intake не прошёл' }
 $ASet = "$D\e02-set\E02"
 $Commit = (git rev-parse HEAD).Trim() # ревизия именно этой локальной тренировки
 if ($LASTEXITCODE) { throw 'Не найдена Git-ревизия' }
-& $Gpu -B -m ml.train_gpu --variant A --manifest "$ASet\manifest.json" --root $ASet --pose-model $Pose --private "$D\A-work" --out "$D\A-run"
+& $Gpu -B -m ml.train_gpu --variant A --manifest "$ASet\manifest.json" --manifest-sha256 '8c73b2a35584639f3a2ea057878d39cf105c52ffa4d77a4a41639c2606134931' --root $ASet --pose-model $Pose --private "$D\A-work" --out "$D\A-run"
 if ($LASTEXITCODE) { throw 'Нет завершённого локального E02/A' }
 if ((Get-Content -Raw -LiteralPath "$D\A-run\receipt.json" | ConvertFrom-Json).status -ne 'trained') {
     throw 'Не использовать неполный run'
@@ -149,4 +149,4 @@ if ($LASTEXITCODE) { throw 'Не удалось подтвердить числ�
 
 **Контрольная сборка на станции Антона:** новый E02/A обучен на CUDA по чистому development-манифесту (77 train, 20 validation, 324 обновления). Его экспорт прошёл проверку FP32, затем собраны ARM64 AAR (4 224 414 байт, SHA-256 `d4262794b2f9f86140480d21d6a8146a1eed85e1fff12be2dc021a9e90b3ea07`) и подписанный debug APK (62 132 262 байта, SHA-256 `23728fa2cbf260067f3f595366388b57cac1c263850b8564401015cea71786f2`). Оба файла перечитаны и совпали с квитанцией. Из SDK ZIP LiteRT выпал `litert/build_common/build_config.h`; поэтому `fetch --kind litert` дополнительно получает официальный `build_config_gpu.h` из той же ревизии v2.4.0. Если папка `litert-upstream` была скачана по старой инструкции, повторить **только fetch LiteRT в новый каталог** и передать этот каталог через `--litert`. Обучение и конвертацию из-за заголовка повторять не нужно.
 
-Это проверка рецепта, не приёмка ПК Димаса или телефона. На станции Димаса используются собственные веса, ключ и SHA. На CPH2399 этот контрольный APK не ставили: `installed=false`, `gpu_verified=false`, `parity_verified=false`, `e2e_verified=false`.
+Это проверка рецепта, не приёмка сборочного ПК или телефона. На сборочной станции используются собственные веса, ключ и SHA. На CPH2399 этот контрольный APK не ставили: `installed=false`, `gpu_verified=false`, `parity_verified=false`, `e2e_verified=false`.

@@ -171,13 +171,26 @@ view.check = (root, $) => {
     });
   }
   function fail(text, stop) { flow.error = text; flow.errorStop = !!stop; render(); }
+  function dropClip() { if (flow.url) URL.revokeObjectURL(flow.url); flow.url = null; }
+  // The chosen video fills the stage card; while it is analysed a scan line runs over it.
+  const stage = root.querySelector("figure.q-card--stage"), stageOrig = [...stage.childNodes];
+  function paintStage() {
+    if (!flow.blob || flow.recording) { if (stage.dataset.clip) { stage.replaceChildren(...stageOrig); delete stage.dataset.clip; } return; }
+    if (!flow.url) flow.url = URL.createObjectURL(flow.blob);
+    if (stage.dataset.clip !== flow.url) {
+      stage.dataset.clip = flow.url;
+      stage.replaceChildren(...frag('<video class="q-clip" muted playsinline loop autoplay aria-label="Выбранное видео упражнения"></video><span class="q-clip-tag">Ваше видео</span><div class="q-scan" hidden><span class="q-scan-line"></span><p class="q-scan-note" role="status">Анализ на видеокарте…</p></div>'));
+      const v = stage.querySelector("video"); v.src = flow.url; v.play().catch(() => {});
+    }
+    stage.querySelector(".q-scan").hidden = !flow.busy;
+  }
   function take(file) {
     if (!file) return;
     const type = (file.type || "").split(";")[0];
     if (!TYPES.includes(type)) return fail("Поддерживаются только MP4 и WebM.");
     if (!file.size) return fail("Файл пустой.");
     if (file.size > MAX_BYTES) return fail("Файл больше 64 МБ.");
-    flow.blob = file; flow.type = type; flow.error = ""; flow.step = 3; render();
+    dropClip(); flow.blob = file; flow.type = type; flow.error = ""; flow.step = 3; render();
   }
   async function record() {
     flow.error = "";
@@ -207,8 +220,8 @@ view.check = (root, $) => {
       const list = res.data.attempts || [];
       if (!list.length) return fail("Рука не видна достаточно хорошо для оценки. Попытка не засчитана.");
       const hash = await clipHash(flow.blob), dup = store.addAttempts(res.data, hash), a = list[0];
-      last = { label: a.label, confidence: typeof a.confidence === "number" ? a.confidence : null, reason: a.reason || null, model: res.data.model || store.state.prefs.model, dup };
-      flow.step = 1; flow.blob = null; flow.consent = false; engine.check(); return go("result");
+      last = { label: a.label, confidence: typeof a.confidence === "number" ? a.confidence : null, reason: a.reason || null, model: res.data.model || store.state.prefs.model, dup, url: flow.url, type: flow.type };
+      flow.url = null; flow.step = 1; flow.blob = null; flow.consent = false; engine.check(); return go("result");
     }
     if (res.kind === "canceled") return fail("Отправка отменена.");
     if (res.kind === "offline") return fail("Нет связи с локальным анализатором. Проверьте, что движок запущен, и восстановите подключение.", true);
@@ -222,7 +235,7 @@ view.check = (root, $) => {
   }
   const msg = () => flow.error ? '<p role="alert" class="q-msg' + (flow.errorStop ? " q-msg--stop" : "") + '">' + flow.error.replace(/[<&]/g, "") + "</p>" : "";
   function render() {
-    paintSteps();
+    paintSteps(); paintStage();
     if (flow.step === 1) {
       card.replaceChildren(...frag('<h2 class="t-l">Посмотрите инструкцию</h2>' +
         '<ol class="steps">' + ["Сядьте боком к камере, чтобы плечо, локоть и запястье были видны целиком.", "Поставьте телефон на уровне локтя, в полутора-двух метрах. Хорошее освещение, однотонный фон, в кадре один человек.", "Выполните ровно одно разгибание локтя от согнутого положения до прямого и обратно.", "Запись не длиннее 30 секунд."].map((t, i) => '<li><span class="q-num">' + (i + 1) + '</span><div><p>' + t + "</p></div></li>").join("") + "</ol>" +
@@ -252,9 +265,9 @@ view.check = (root, $) => {
     card.querySelector("[data-el=url]").textContent = String(store.state.prefs.engineUrl).replace(/^https?:\/\//, "");
     const box = card.querySelector("input[type=checkbox]"); box.checked = flow.consent; box.disabled = flow.busy;
     box.addEventListener("change", () => { flow.consent = box.checked; render(); });
-    card.querySelector("[data-act=back]").addEventListener("click", () => { if (flow.busy) return flow.ctrl && flow.ctrl.abort(); flow.error = ""; if (has) { flow.blob = null; flow.step = 2; } else flow.step = 1; render(); });
+    card.querySelector("[data-act=back]").addEventListener("click", () => { if (flow.busy) return flow.ctrl && flow.ctrl.abort(); flow.error = ""; if (has) { dropClip(); flow.blob = null; flow.step = 2; } else flow.step = 1; render(); });
     card.querySelector("[data-act=send]").addEventListener("click", send);
-    const again = card.querySelector("[data-act=again]"); if (again) again.addEventListener("click", () => { flow.blob = null; flow.step = 2; flow.error = ""; render(); });
+    const again = card.querySelector("[data-act=again]"); if (again) again.addEventListener("click", () => { dropClip(); flow.blob = null; flow.step = 2; flow.error = ""; render(); });
     const drop = card.querySelector("[data-el=drop]");
     if (drop) {
       const input = drop.querySelector("input[type=file]");
@@ -278,7 +291,16 @@ view.result = (root, $) => {
     if (kind === "complete") { const s = one('<div class="q-sprite fig-side" role="img" aria-label="Фигура повторяет цикл: рука разогнута до прямой" data-s="width: 100%; height: 100%; animation: q-once 1.4s steps(24, jump-none) .3s both"></div>'); fig.replaceChildren(s); }
     else fig.replaceChildren(one('<img alt="' + (kind === "incomplete" ? "Рука разогнута не до конца" : "Полупрозрачная фигура") + '" data-r="' + (kind === "incomplete" ? "fig-side-mid" : "fig-uncertain") + '" data-s="width: 100%; height: 100%; object-fit: contain">'));
   };
-  play(); $("replay").addEventListener("click", play); $("replay").hidden = kind !== "complete";
+  const stage = fig.closest("figure");
+  if (last.url && stage) {
+    fig.style.visibility = "hidden";
+    const tag = { complete: "Выполнено", incomplete: "Проверьте инструкцию", uncertain: "Не оценено уверенно" }[kind] || kind;
+    stage.dataset.clip = last.url;
+    stage.prepend(...frag('<video class="q-clip" muted playsinline loop autoplay aria-label="Проверенное видео упражнения"></video><span class="q-clip-tag q-clip-tag--' + kind + '"><span class="q-sw f-' + kind + '" data-s="width: 16px; height: 16px"></span>' + tag + '</span>'));
+    const v = stage.querySelector("video.q-clip"); v.src = last.url; v.play().catch(() => {});
+    const cap = stage.querySelector("figcaption"); if (cap && cap.firstChild && cap.firstChild.nodeType === 3) cap.firstChild.textContent = "Ваше видео, оценено моделью A";
+    $("replay").addEventListener("click", () => { v.currentTime = 0; v.play().catch(() => {}); });
+  } else { play(); $("replay").addEventListener("click", play); $("replay").hidden = kind !== "complete"; }
   $("added").textContent = last.dup ? "Это видео уже учтено" : "Добавлено в историю";
   const head = $("verdict").querySelector("h2"); head.textContent = LABEL[kind] || kind;
   if (kind !== "complete") { head.style.fontSize = "clamp(34px, 3.6vw, 52px)"; $("verdict").querySelector("svg").replaceWith(one('<span class="q-sw f-' + kind + '" data-s="width: 64px; height: 64px"></span>')); }
@@ -390,6 +412,9 @@ function render() {
   app.replaceChildren(root);
   paintStatus(root);
   dispose = view[screen](root, $) || null;
+  // On a phone the nav is one sideways-scrolling row: bring the current section into view.
+  const nav = root.querySelector(".q-nav:not(.hero-nav)"), on = nav && nav.querySelector(".is-on");
+  if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft += on.getBoundingClientRect().left - nav.getBoundingClientRect().left - (nav.clientWidth - on.offsetWidth) / 2;
   if (current !== name) window.scrollTo(0, 0);
   current = name;
   document.title = ({ welcome: "Знакомство", today: "Сегодня", check: "Проверка", result: "Результат", progress: "Прогресс", guide: "Памятка", cabinet: "Кабинет" })[screen] + " · Qolda";

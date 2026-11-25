@@ -232,6 +232,17 @@ body { margin: 0; background: var(--ground); }
 .hist button { margin-left: 8px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--sunk); color: var(--ink-2); cursor: pointer; }
 .hist em + button { margin-left: 8px; }
 
+/* The person's own video fills the stage card; a scan line runs over it while it is analysed. */
+figure.q-card--stage[data-clip] { background: #0C1633 !important; isolation: isolate; }
+.q-clip { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 62%; border-radius: inherit; background: #0C1633; }
+.q-clip-tag { position: absolute; left: 22px; top: 22px; z-index: 2; display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 18px; border-radius: 999px; background: rgba(255,255,255,.94); color: var(--ink); font-size: 15px; font-weight: 600; box-shadow: 0 8px 24px rgba(12,22,51,.22); }
+.q-scan { position: absolute; inset: 0; z-index: 1; overflow: hidden; border-radius: inherit; background: linear-gradient(180deg, rgba(31,63,230,0) 30%, rgba(31,63,230,.28)); }
+.q-scan-line { position: absolute; left: 0; right: 0; height: 3px; background: var(--sun); box-shadow: 0 0 28px 8px rgba(255,190,46,.55); animation: q-scan 1.5s var(--io) infinite alternate; }
+@keyframes q-scan { from { top: 6%; } to { top: 92%; } }
+.q-scan-note { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); padding: 12px 22px; border-radius: 999px; background: rgba(12,22,51,.88); color: #fff; font-size: 16px; font-weight: 500; white-space: nowrap; }
+figure.q-card--stage[data-clip] > figcaption { z-index: 3; }
+@media (prefers-reduced-motion: reduce) { .q-scan-line { animation: none; top: 50%; } }
+
 /* ---------- screen-specific rules carried over from the artboards ---------- */
 
 
@@ -256,3 +267,37 @@ body { margin: 0; background: var(--ground); }
 .tip--stop { background: #FDECEA; }
 .tip--stop span { color: #C5221F; }
 
+
+/* ---------- phones ----------
+   The artboards are drawn at 1440 px and carry their spacing as inline styles, so the narrow
+   layout overrides those with !important. Kept last so no screen rule wins over it. */
+@media (max-width: 900px) {
+  .hero-nav .nav-links { display: none !important; }
+}
+@media (max-width: 600px) {
+  .q { --pad: 14px; }
+  /* App nav: one row that scrolls sideways instead of a three-line oval. */
+  .q-nav:not(.hero-nav) { align-self: stretch !important; flex-wrap: nowrap !important; justify-content: flex-start !important;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; scroll-padding-inline: 8px; }
+  .q-nav:not(.hero-nav)::-webkit-scrollbar { display: none; }
+  .q-nav:not(.hero-nav) > * { flex: 0 0 auto; }
+  .q-nav a { height: 44px; padding: 0 14px; font-size: 15px; }
+  .q-nav a.q-brand { padding: 0 10px 0 4px; font-size: 19px; }
+  /* Cards: the desktop paddings leave no room for content at 360-430 px. */
+  .q-card[style*="padding"] { padding: 24px 20px !important; }
+  .q-card--stage > div[style*="padding"], .q-card--stage > form[style*="padding"] { padding: 28px 20px !important; }
+  /* Buttons never run past their card; a long label may wrap. */
+  .q-btn { max-width: 100%; white-space: normal; text-align: left; line-height: 1.15; }
+  .q-btn--cta { height: auto; min-height: 64px; padding: 8px 26px; font-size: 18px; gap: 12px; }
+  .q-btn--cta .q-joint { width: 46px; height: 46px; margin-right: -16px; }
+  /* Regularity grid follows the card width. */
+  .heat { grid-template-columns: repeat(7, minmax(0, 34px)); gap: 8px; }
+  .heat i { width: auto; height: auto; aspect-ratio: 1; }
+  .q-clip-tag { left: 14px; top: 14px; height: 38px; padding: 0 14px; font-size: 14px; }
+  .q-scan-note { font-size: 14px; padding: 10px 16px; }
+  /* Today: centre the figure that the artboard pins 140 px from the right. */
+  .q-card--stage img[style*="right: 140px"] { right: auto !important; left: 50% !important; transform: translateX(-50%); }
+  /* Result facts: label above value instead of two cramped columns. */
+  dl[data-el="facts"] { grid-template-columns: minmax(0, 1fr) !important; gap: 2px 0 !important; }
+  dl[data-el="facts"] dd { margin: 0 0 10px; font-weight: 600; }
+}

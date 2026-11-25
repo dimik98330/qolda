@@ -19,7 +19,7 @@
 
 <img src="docs/media/demo.gif" width="860" alt="Qolda: landing page, then a real analysis of one elbow-extension clip that returns Complete">
 
-<sub>Real run: a validation clip from the public dataset goes to the local engine on the GPU and comes back <b>Complete</b>. Full 1:52 walkthrough with voice-over: <a href="docs/media/qolda-demo.mp4">docs/media/qolda-demo.mp4</a>.</sub>
+<sub>Real run: a validation clip from the public dataset fills the card, a scan line runs while the local engine analyses it on the GPU, and it comes back <b>Complete</b>. Full 1:53 walkthrough with voice-over: <a href="docs/media/qolda-demo.mp4">docs/media/qolda-demo.mp4</a>.</sub>
 
 </div>
 
@@ -62,11 +62,22 @@ What makes it different:
 
 | Landing | Today |
 |---|---|
-| ![Landing page with the 3D mannequin and goniometer](docs/media/screens/01-landing.jpg) | ![Today screen: day goal, week chart, wellbeing and when to stop](docs/media/screens/03-today.jpg) |
-| **Check: instruction** | **Check: result** (real engine answer) |
-| ![Step 1 of the check: how to sit and record](docs/media/screens/04-check.jpg) | ![Result: Complete, model A, confidence, processed locally](docs/media/screens/05-result.jpg) |
+| ![Landing page with the 3D mannequin and goniometer](docs/media/screens/01-landing.jpg) | ![Today: day goal, week chart, wellbeing and when to stop](docs/media/screens/02-today.jpg) |
+| **Check: the video is analysed on the GPU** | **Result** (real engine answer) |
+| ![The chosen clip fills the card while a scan line runs over it](docs/media/screens/03-analysis.jpg) | ![Result: the person's own clip tagged Complete, model A, confidence, processed locally](docs/media/screens/04-result.jpg) |
 | **Progress** | **Guide** |
-| ![Progress: cycles per day, regularity, history](docs/media/screens/06-progress.jpg) | ![Guide: camera setup, exercise tips, safety](docs/media/screens/07-guide.jpg) |
+| ![Progress: cycles per day, regularity, history](docs/media/screens/05-progress.jpg) | ![Guide: camera setup, exercise tips, safety](docs/media/screens/06-guide.jpg) |
+
+**On a phone** (390 px):
+
+<p>
+<img src="docs/media/screens/phone/1-today.jpg" width="24%" alt="Phone: Today">
+<img src="docs/media/screens/phone/2-video.jpg" width="24%" alt="Phone: the checked clip tagged Complete">
+<img src="docs/media/screens/phone/3-result.jpg" width="24%" alt="Phone: result card">
+<img src="docs/media/screens/phone/4-progress.jpg" width="24%" alt="Phone: progress">
+</p>
+
+<sub>The clip in the check and result screens is validation clip <code>05_02_01_01</code> from B. Nair et al., Upper limb stroke rehabilitation exercise video dataset, Mendeley Data V1, CC BY 4.0, <a href="https://doi.org/10.17632/49h9dcwx5v.1">doi:10.17632/49h9dcwx5v.1</a>.</sub>
 
 ## How a check works
 

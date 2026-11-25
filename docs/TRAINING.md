@@ -66,7 +66,8 @@ if ($LASTEXITCODE) { throw 'E01/E03 intake failed' }
 $ASet = "$D/e02-set/E02"; $Extras = "$D/extra-set"
 $E01Pin = '287285d9386f26f7d147a9821fdd46b38f32673f801ea7c7df336ddefe7015eb'
 $E03Pin = '125abc289062c15a26a490bbaf7306d73767fcaddbea6c62fff81282a0d2b7ea'
-Assert-QoldaSHA "$ASet/manifest.json" '8c73b2a35584639f3a2ea057878d39cf105c52ffa4d77a4a41639c2606134931'
+$APin = '8c73b2a35584639f3a2ea057878d39cf105c52ffa4d77a4a41639c2606134931'
+Assert-QoldaSHA "$ASet/manifest.json" $APin
 Assert-QoldaSHA "$Extras/E01/manifest.json" $E01Pin
 Assert-QoldaSHA "$Extras/E03/manifest.json" $E03Pin
 ```
@@ -78,7 +79,7 @@ Assert-QoldaSHA "$Extras/E03/manifest.json" $E03Pin
 **E02/A.** 36 эпох, batch 8, lr 0.002, seed 601; 64 фазы, маски и политика пропусков. Использовать пустые отдельные каталоги вне Git. Базовый A не требует SLiM. Для bundle статический граф должен лежать рядом с его JSON.
 
 ```powershell
-& $Py -B -m ml.train_gpu --variant A --manifest "$ASet/manifest.json" --root $ASet --pose-model $Pose --private "$D/A-work" --out "$D/A-run"
+& $Py -B -m ml.train_gpu --variant A --manifest "$ASet/manifest.json" --manifest-sha256 $APin --root $ASet --pose-model $Pose --private "$D/A-work" --out "$D/A-run"
 if ($LASTEXITCODE) { throw 'A fit did not finish' }
 & $Py -B -m tools.build_bundle --artifacts "$D/A-run" --name A-tcn.safetensors --pose-model $Pose --graph $Graph --manifest "$ASet/manifest.json" --source-commit $Commit --out "$D/pose/bundle.json"
 if ($LASTEXITCODE) { throw 'A bundle failed' }

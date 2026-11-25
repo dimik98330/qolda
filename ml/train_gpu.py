@@ -29,6 +29,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 SEED = 601
+A_RELEASE_MANIFEST = '8c73b2a35584639f3a2ea057878d39cf105c52ffa4d77a4a41639c2606134931'
 VERSION = 'seriq-e02-forearm-1.0.0'
 HYPER = {'A': dict(epochs=36, batch=8, lr=.002), 'B': dict(epochs=20, batch=8, lr=.00015),
          'C': dict(epochs=20, batch=8, lr=.00015)}
@@ -64,12 +65,11 @@ def load_manifest(path, variant=None, expected_sha256=None):
     validator are checked here, so a renamed or edited public E02 cannot be trained.
     """
     raw = Path(path).read_bytes()
-    if variant in ('B', 'C'):
-        if not expected_sha256 or not HEX64.fullmatch(expected_sha256):
-            raise ValueError('B/C require --manifest-sha256 pinned at release time')
-        actual = hashlib.sha256(raw).hexdigest()
-        if actual != expected_sha256:
-            raise ValueError('derived manifest digest does not match the pinned --manifest-sha256')
+    if variant == 'A' and expected_sha256 is None:
+        expected_sha256 = A_RELEASE_MANIFEST
+    actual = hashlib.sha256(raw).hexdigest()
+    if variant in ('A', 'B', 'C') and (not expected_sha256 or not HEX64.fullmatch(expected_sha256) or actual != expected_sha256):
+        raise ValueError('manifest bytes do not match the required release pin')
     doc = json.loads(raw.decode('utf8'))
     if not isinstance(doc, dict) or not isinstance(doc.get('rows'), list) or not doc['rows']:
         raise ValueError('empty or malformed manifest')
@@ -121,7 +121,7 @@ def load_manifest(path, variant=None, expected_sha256=None):
         labels = Counter(r['label'] for r in rows if r['split'] == split)
         if set(labels) != {0, 1}:
             raise ValueError(f'{split} must contain both classes: {dict(labels)}')
-    return rows
+    return rows, actual
 
 
 def validation_rows_digest(rows):
@@ -452,7 +452,7 @@ def main(argv=None):
     ap.add_argument('--variant', required=True, choices=('A', 'B', 'C'))
     ap.add_argument('--manifest', required=True, type=Path)
     ap.add_argument('--manifest-sha256', default=None,
-                    help='B/C: digest of the exact derived manifest bytes, pinned at release time')
+                    help='approved manifest SHA-256: A defaults to the canonical development set; B/C require explicit derived pins')
     ap.add_argument('--root', required=True, type=Path, help='directory the manifest paths are relative to')
     ap.add_argument('--pose-model', required=True, type=Path)
     ap.add_argument('--private', required=True, type=Path, help='private work dir outside the checkout')
@@ -490,9 +490,11 @@ def main(argv=None):
 
     # Manifest validation happens before CUDA init, media access or any output directory.
     try:
-        rows = load_manifest(args.manifest, args.variant, args.manifest_sha256)
+        rows, manifest_sha = load_manifest(args.manifest, args.variant, args.manifest_sha256)
     except FileNotFoundError:
         ap.error('manifest is missing; no training started')
+    except ValueError as exc:
+        ap.error(str(exc))
     counts = Counter((r['split'], r['label']) for r in rows)
     print(f'manifest rows={len(rows)} counts={dict(counts)}', flush=True)
 
@@ -501,9 +503,7 @@ def main(argv=None):
     enable_cuda_dlls()
     stack = cuda_stack()
 
-    # For B/C these exact bytes were verified and parsed in load_manifest. Do not
-    # reopen the path and accidentally attribute a run to a later file revision.
-    manifest_sha = args.manifest_sha256 if args.variant in SCOPES else sha256(args.manifest)
+
     pose, pose_info = prepare_pose(args.pose_model, private / 'graphs')
     budget = dict(steps=args.steps, eval_every=args.eval_every) if args.variant != 'A' else None
     receipt = dict(schema='seriq-train-gpu-receipt-v1', variant=args.variant,
