@@ -1,0 +1,131 @@
+{
+  "artifact": "A-tcn.safetensors",
+  "sha256": "e66c0d137d64612658908703051d3319b5bc550a1828d629e1aaf0aad5b90478",
+  "train": {
+    "abstain_reasons": {
+      "incomplete_forearm_coverage": 5,
+      "insufficient_visible_forearm_pair": 1
+    },
+    "balanced_accuracy": 1.0,
+    "class_order": [
+      "incomplete",
+      "complete"
+    ],
+    "class_scored": [
+      42,
+      29
+    ],
+    "class_total": [
+      47,
+      30
+    ],
+    "confidence_audit": {
+      "cutoff": 0.1,
+      "false_complete_at_or_above": 0,
+      "n_at_or_above": 71,
+      "n_below": 0
+    },
+    "confusion": [
+      [
+        42,
+        0
+      ],
+      [
+        0,
+        29
+      ]
+    ],
+    "coverage": 0.922077922077922,
+    "f1_complete": 1.0,
+    "f1_macro": 1.0,
+    "n": 77,
+    "n_abstain": 6,
+    "n_scored": 71,
+    "status": "ok",
+    "unconditional_balanced_recall": 0.9301418439716311
+  },
+  "training": {
+    "budget_steps": null,
+    "checkpoint_step": 324,
+    "class_weights": [
+      0.8452380895614624,
+      1.2241379022598267
+    ],
+    "device": "cuda:0",
+    "eval_every": null,
+    "expanded_exposed_families": 0,
+    "expanded_required_families": 0,
+    "exposed_families_at_checkpoint": 0,
+    "exposure_by_origin": {},
+    "exposure_by_source": {},
+    "frozen_tensors_verified": 0,
+    "hyperparameters": {
+      "batch": 8,
+      "epochs": 36,
+      "lr": 0.002
+    },
+    "missing_families": 0,
+    "parameters_total": 2321,
+    "parameters_trainable": 2321,
+    "peak_cuda_allocated_bytes": 20472320,
+    "required_families": 0,
+    "seed": 601,
+    "steps_executed": 324,
+    "trainable_tensors": 8,
+    "unusable_families": 0,
+    "updated_tensors": [
+      "conv.0.weight",
+      "conv.0.bias",
+      "conv.2.weight",
+      "conv.2.bias",
+      "head.0.weight",
+      "head.0.bias",
+      "head.3.weight",
+      "head.3.bias"
+    ],
+    "validation_checks": 36,
+    "validation_rows_sha256": null,
+    "variant_claim": "A"
+  },
+  "validation": {
+    "abstain_reasons": {},
+    "balanced_accuracy": 1.0,
+    "class_order": [
+      "incomplete",
+      "complete"
+    ],
+    "class_scored": [
+      10,
+      10
+    ],
+    "class_total": [
+      10,
+      10
+    ],
+    "confidence_audit": {
+      "cutoff": 0.1,
+      "false_complete_at_or_above": 0,
+      "n_at_or_above": 20,
+      "n_below": 0
+    },
+    "confusion": [
+      [
+        10,
+        0
+      ],
+      [
+        0,
+        10
+      ]
+    ],
+    "coverage": 1.0,
+    "f1_complete": 1.0,
+    "f1_macro": 1.0,
+    "n": 20,
+    "n_abstain": 0,
+    "n_scored": 20,
+    "status": "ok",
+    "unconditional_balanced_recall": 1.0
+  },
+  "variant": "A"
+}

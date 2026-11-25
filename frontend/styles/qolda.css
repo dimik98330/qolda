@@ -1,0 +1,258 @@
+/* Qolda · «Небо и керамика». One stylesheet for every artboard: tokens, type, controls, motion. */
+:root {
+  --ground: #F4F6FB;  --surface: #FFFFFF;  --sunk: #E7ECF7;
+  --sky-1: #A9C1FF;   --sky-2: #CFDCFF;    --sky-3: #E6EDFF;
+  --ink: #0C1633;     --ink-2: #3A4668;    --ink-3: #5A6689;
+  --blue: #1F3FE6;    --blue-deep: #1630B8; --blue-tint: #E3EAFF;
+  --sun: #FFBE2E;     --sun-ink: #3A2A00;  --sun-tint: #FFF1CC;
+  --stop: #C5221F;    --stop-tint: #FDECEA;
+  --hair: rgba(12, 22, 51, .10);  --hair-2: rgba(12, 22, 51, .22);
+  --font: "Geologica", "Segoe UI", system-ui, sans-serif;
+  --out: cubic-bezier(.16, 1, .3, 1);
+  --io: cubic-bezier(.65, 0, .35, 1);
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --r-s: 18px;  --r-m: 28px;  --r-l: 40px;
+  --pad: clamp(20px, 6.67vw, 96px);
+}
+
+/* ---------- base ---------- */
+.q { box-sizing: border-box; font-family: var(--font); font-size: 17px; line-height: 1.55; color: var(--ink); background: var(--ground);
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; text-wrap: pretty; }
+.q *, .q *::before, .q *::after { box-sizing: border-box; }
+.q h1, .q h2, .q h3, .q h4, .q p, .q ul, .q ol, .q dl, .q dd, .q figure { margin: 0; padding: 0; }
+.q ul, .q ol { list-style: none; }
+.q :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.t-display { font-size: clamp(36px, 3.9vw, 56px); line-height: 1.04; font-weight: 600; letter-spacing: -.03em; }
+.t-xl { font-size: clamp(30px, 3.05vw, 44px); line-height: 1.08; font-weight: 600; letter-spacing: -.025em; }
+.t-l { font-size: 30px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
+.t-m { font-size: 22px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; }
+.t-lead { font-size: 20px; line-height: 1.5; color: var(--ink-2); }
+.t-small { font-size: 15px; line-height: 1.45; color: var(--ink-3); }
+.t-2 { color: var(--ink-2); }
+.t-3 { color: var(--ink-3); }
+.t-num { font-weight: 700; letter-spacing: -.05em; line-height: .86; }
+
+/* ---------- buttons: a limb with a joint ---------- */
+.q-btn { display: inline-flex; align-items: center; justify-content: center; gap: 14px; height: 60px; padding: 0 28px; border: 0; border-radius: 999px;
+  background: var(--blue); color: #fff; font: 600 18px/1 var(--font); letter-spacing: -.005em; text-decoration: none; white-space: nowrap; cursor: pointer;
+  transition: transform .16s var(--out), background-color .2s ease, box-shadow .2s ease; }
+.q-btn:hover { background: var(--blue-deep); }
+.q-btn:active { transform: scale(.97); }
+.q-btn .q-joint { width: 40px; height: 40px; margin-right: -18px; border-radius: 50%; background: #fff; color: var(--blue); display: grid; place-items: center; flex: none;
+  transition: transform .35s var(--spring); }
+.q-btn:hover .q-joint { transform: translateX(4px); }
+.q-btn--cta { height: 72px; padding: 0 36px; font-size: 20px; }
+.q-btn--cta .q-joint { width: 52px; height: 52px; margin-right: -26px; }
+.q-btn--ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--hair-2); }
+.q-btn--ghost:hover { background: rgba(255, 255, 255, .6); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.q-btn--quiet { background: var(--sunk); color: var(--ink); }
+.q-btn--quiet:hover { background: #DCE3F3; }
+.q-btn--white { background: #fff; color: var(--ink); }
+.q-btn--white:hover { background: var(--blue-tint); }
+.q-btn--stop { background: var(--stop); }
+.q-btn--stop:hover { background: #A51B18; }
+.q-btn--small { height: 48px; padding: 0 22px; font-size: 16px; }
+.q-btn.is-off { background: var(--sunk); color: var(--ink-3); cursor: not-allowed; }
+.q-btn.is-off .q-joint { background: var(--surface); color: var(--ink-3); }
+
+/* ---------- navigation island ---------- */
+.q-nav { display: flex; align-items: center; gap: 4px; padding: 8px; border-radius: 999px; background: rgba(255, 255, 255, .84);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 12px 32px rgba(22, 36, 92, .12); }
+.q-nav a { display: inline-flex; align-items: center; height: 48px; padding: 0 20px; border-radius: 999px; color: var(--ink-2); font-weight: 500; font-size: 16px;
+  text-decoration: none; white-space: nowrap; transition: background-color .18s ease, color .18s ease; }
+.q-nav a:hover { background: var(--sunk); color: var(--ink); }
+.q-nav a.is-on { background: var(--ink); color: #fff; }
+.q-nav a.q-btn, .q-nav a.q-btn:hover { background: var(--blue); color: #fff; font-weight: 600; padding: 0 24px; }
+.q-nav a.q-btn:hover { background: var(--blue-deep); }
+.q-nav a.q-brand { gap: 10px; padding: 0 18px 0 6px; font-weight: 700; font-size: 21px; letter-spacing: -.03em; color: var(--ink); }
+.q-nav a.q-brand:hover { background: transparent; }
+.q-brand img { width: 40px; height: 40px; display: block; }
+.q-status { display: inline-flex; align-items: center; gap: 9px; height: 48px; padding: 0 18px; border-radius: 999px; background: var(--sunk); font-size: 15px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.q-status i { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); flex: none; }
+.q-lang { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--sunk); }
+.q-lang button { height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; font: 500 15px/1 var(--font); color: var(--ink-2); cursor: pointer; }
+.q-lang button.is-on { background: var(--surface); color: var(--ink); font-weight: 600; }
+
+/* ---------- surfaces ---------- */
+.q-card { background: var(--surface); border-radius: var(--r-m); padding: 28px; }
+.q-card--sunk { background: var(--sunk); }
+.q-card--blue { background: var(--blue); color: #fff; }
+.q-card--stage { border-radius: var(--r-l); padding: 0; overflow: hidden; position: relative; }
+.q .q-sky { background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%); }
+.q-stop { background: var(--stop-tint); border-radius: var(--r-m); padding: 28px; }
+.q-stop h3 { color: var(--stop); }
+
+/* ---------- result states: always a fill pattern, an icon and a word ---------- */
+.f-complete { background: var(--blue); }
+.f-incomplete { background: repeating-linear-gradient(135deg, var(--ink) 0 2px, transparent 2px 7px), var(--sunk); }
+.f-uncertain { background: radial-gradient(var(--ink-3) 1.3px, transparent 1.7px) 0 0 / 7px 7px, var(--sunk); }
+.f-none { background: var(--sunk); box-shadow: inset 0 0 0 1.5px var(--hair-2); }
+.q-sw { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.q-state { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+
+/* ---------- controls ---------- */
+.q-field { display: flex; flex-direction: column; gap: 8px; }
+.q-field label, .q-label { font-weight: 600; font-size: 16px; }
+.q-input { width: 100%; height: 60px; padding: 0 20px; border-radius: var(--r-s); border: 1.5px solid var(--hair-2); background: var(--surface); font: 400 18px/1 var(--font); color: var(--ink); }
+.q-seg { display: inline-flex; gap: 4px; padding: 6px; border-radius: 999px; background: var(--sunk); }
+.q-seg button { height: 48px; padding: 0 24px; border: 0; border-radius: 999px; background: transparent; font: 500 16px/1 var(--font); color: var(--ink-2); cursor: pointer; transition: background-color .18s ease; }
+.q-seg button.is-on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 2px 10px rgba(22, 36, 92, .12); }
+.q-toggle { width: 64px; height: 38px; border: 0; border-radius: 999px; background: var(--blue); position: relative; flex: none; cursor: pointer; }
+.q-toggle::after { content: ""; position: absolute; top: 4px; left: 30px; width: 30px; height: 30px; border-radius: 50%; background: #fff; transition: left .22s var(--out); }
+.q-toggle.is-off { background: #AEB7CE; }
+.q-toggle.is-off::after { left: 4px; }
+.q-stepper { display: inline-flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; background: var(--sunk); }
+.q-stepper button { width: 48px; height: 48px; border: 0; border-radius: 50%; background: var(--surface); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.q-stepper output { min-width: 60px; text-align: center; font-weight: 600; font-size: 24px; }
+.q-chip { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--surface); font: 500 16px/1 var(--font); color: var(--ink-2); cursor: pointer; }
+.q-chip.is-on { background: var(--ink); color: #fff; }
+.q-num { width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 18px; flex: none; }
+.q-num--on { background: var(--sun); color: var(--sun-ink); }
+.q-num--next { background: var(--sunk); color: var(--ink-3); }
+
+/* ---------- sprite strips: the figure's frames, played with steps() ---------- */
+.q-sprite { background-repeat: no-repeat; background-position: 0 0; background-size: 2400% 100%; }
+.q-sprite--loop { animation: q-cycle 8s steps(24, jump-none) infinite; }
+.q-sprite--16 { background-size: 1600% 100%; }
+@keyframes q-cycle { 0%, 14% { background-position-x: 0%; } 34%, 66% { background-position-x: 100%; } 86%, 100% { background-position-x: 0%; } }
+@keyframes q-arc { 0%, 14% { stroke-dashoffset: 100; } 34%, 66% { stroke-dashoffset: 0; } 86%, 100% { stroke-dashoffset: 100; } }
+@keyframes q-late { 0%, 35% { opacity: 0; } 41%, 62% { opacity: 1; } 68%, 100% { opacity: 0; } }
+@keyframes q-once { from { background-position-x: 0%; } to { background-position-x: 100%; } }
+
+/* ---------- entrances ---------- */
+@keyframes q-rise { from { opacity: 0; transform: translateY(.32em); } to { opacity: 1; transform: none; } }
+@keyframes q-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@keyframes q-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes q-pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes q-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.a-rise { animation: q-rise 1.1s var(--out) both; }
+.a-up { animation: q-up .9s var(--out) both; }
+.a-fade { animation: q-fade .9s ease both; }
+.a-pop { animation: q-pop .7s var(--spring) both; }
+.a-draw { stroke-dasharray: 100; animation: q-draw 1.4s var(--io) both; }
+.d1 { animation-delay: .09s; } .d2 { animation-delay: .18s; } .d3 { animation-delay: .27s; } .d4 { animation-delay: .36s; }
+.d5 { animation-delay: .45s; } .d6 { animation-delay: .6s; } .d7 { animation-delay: .8s; } .d8 { animation-delay: 1s; } .d9 { animation-delay: 1.3s; }
+
+/* ---------- landing hero ---------- */
+.hero { position: relative; min-height: 920px; padding: 0 var(--pad) 56px; overflow: hidden; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--sky-1) 0%, #C6D6FF 44%, var(--sky-3) 78%, var(--ground) 100%); }
+.hero-nav { position: relative; z-index: 5; margin-top: 20px; align-self: center; max-width: 100%; }
+.hero-word { position: absolute; z-index: 1; left: 50%; top: 58px; transform: translateX(-50%); display: flex; white-space: nowrap;
+  font-size: 27.5vw; font-weight: 800; letter-spacing: -.055em; line-height: 1; user-select: none; }
+.hero-word span { display: inline-block; color: transparent; -webkit-background-clip: text; background-clip: text;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .98) 18%, rgba(255, 255, 255, .8) 46%, rgba(255, 255, 255, .1) 82%); }
+.hero-fig { position: absolute; z-index: 3; right: clamp(0px, 5.3vw, 76px); bottom: -16px; width: min(46.1vw, 664px); aspect-ratio: 640 / 752; }
+.hero-fig .q-sprite { position: absolute; inset: 0; -webkit-mask-image: linear-gradient(#000 84%, transparent 99%); mask-image: linear-gradient(#000 84%, transparent 99%); }
+.hero-fig svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hero-copy { position: relative; z-index: 4; margin-top: auto; padding-top: 330px; max-width: 540px; display: flex; flex-direction: column; gap: 22px; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+.hero-note { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-2); }
+.hero-caption { position: absolute; z-index: 4; right: var(--pad); bottom: 22px; font-size: 14px; color: var(--ink-3); }
+
+.sec { padding: 120px var(--pad) 0; }
+.sec-head { display: flex; flex-direction: column; gap: 16px; max-width: 760px; margin-bottom: 48px; }
+.steps { display: flex; flex-direction: column; }
+.steps li { display: flex; gap: 20px; padding: 24px 0; border-top: 1.5px solid var(--hair); }
+.steps li:first-child { border-top: 0; padding-top: 0; }
+.steps div { display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 900px) {
+  .hero { min-height: 0; padding-bottom: 32px; }
+  .hero-word { top: 84px; font-size: 31vw; }
+  .hero-fig { position: relative; right: auto; bottom: auto; width: min(100%, 420px); margin: 150px auto 0; order: 2; }
+  .hero-fig svg { display: none; }
+  .hero-copy { padding-top: 16px; order: 3; }
+  .hero-caption { position: static; order: 4; margin-top: 16px; }
+  .hero-nav .nav-links { display: none; }
+  .sec { padding-top: 72px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q *, .q *::before, .q *::after { animation: none !important; transition: none !important; }
+  .q-sprite { background-position-x: 100%; }
+}
+
+/* ---------- looping demos for the logo and motion boards (the product plays each once) ---------- */
+.q-sprite--unfold { animation: q-unfold 4.4s steps(24, jump-none) infinite; }
+@keyframes q-unfold { 0%, 16% { background-position-x: 0%; } 50%, 90% { background-position-x: 100%; } 100% { background-position-x: 0%; } }
+.m-letter { display: inline-block; animation: m-letter 6s var(--out) infinite both; }
+@keyframes m-letter { 0% { opacity: 0; transform: translateY(.34em); } 18%, 86% { opacity: 1; transform: none; } 94%, 100% { opacity: 0; transform: none; } }
+.m-turn { animation: m-strip 6s steps(16, jump-none) infinite; }
+.m-result { animation: m-strip 6s steps(24, jump-none) infinite; }
+@keyframes m-strip { 0%, 12% { background-position-x: 0%; } 38%, 90% { background-position-x: 100%; } 100% { background-position-x: 0%; } }
+.m-pill { animation: m-pill 6s var(--io) infinite; }
+@keyframes m-pill { 0%, 14% { width: 124px; } 30%, 88% { width: 176px; } 100% { width: 124px; } }
+.m-a { animation: m-a 6s ease infinite; }
+.m-b { animation: m-b 6s ease infinite; }
+@keyframes m-a { 0%, 14% { opacity: 1; } 22%, 92% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes m-b { 0%, 20% { opacity: 0; transform: translateY(6px); } 30%, 88% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+.m-check { stroke-dasharray: 100; animation: m-check 6s var(--io) infinite; }
+@keyframes m-check { 0%, 40% { stroke-dashoffset: 100; } 50%, 92% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 100; } }
+.m-word { animation: m-word 6s var(--out) infinite both; }
+@keyframes m-word { 0%, 40% { opacity: 0; transform: translateY(18px); } 52%, 92% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.m-tick { animation: m-tick 6s ease infinite; }
+@keyframes m-tick { 0%, 46% { stroke: #C9D2E8; } 54%, 92% { stroke: #1F3FE6; } 100% { stroke: #C9D2E8; } }
+.m-press { animation: m-press 2.6s var(--out) infinite; }
+@keyframes m-press { 0%, 40% { transform: none; background-color: #1F3FE6; } 48% { transform: scale(.97); background-color: #1630B8; } 60%, 100% { transform: none; background-color: #1F3FE6; } }
+.m-press .q-joint { animation: m-joint 2.6s var(--spring) infinite; }
+@keyframes m-joint { 0%, 18% { transform: none; } 30%, 52% { transform: translateX(4px); } 70%, 100% { transform: none; } }
+.m-toggle { animation: m-toggle-bg 3.2s ease infinite; }
+.m-toggle::after { animation: m-toggle 3.2s var(--out) infinite; }
+@keyframes m-toggle { 0%, 30% { left: 4px; } 42%, 82% { left: 30px; } 94%, 100% { left: 4px; } }
+@keyframes m-toggle-bg { 0%, 30% { background-color: #AEB7CE; } 42%, 82% { background-color: #1F3FE6; } 94%, 100% { background-color: #AEB7CE; } }
+.m-ring { stroke-dasharray: 100; animation: m-ring 6s linear infinite; }
+@keyframes m-ring { 0%, 8% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
+.m-s1 { animation: m-s1 6s ease infinite; }
+.m-s2 { animation: m-s2 6s ease infinite; }
+.m-s3 { animation: m-s3 6s ease infinite; }
+@keyframes m-s1 { 0%, 6% { opacity: 1; } 10%, 96% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes m-s2 { 0%, 8% { opacity: 0; } 12%, 56% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes m-s3 { 0%, 58% { opacity: 0; transform: translateY(6px); } 64%, 94% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+/* ---------- site shell ---------- */
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--ground); }
+[hidden] { display: none !important; }
+.q a { color: var(--blue); }
+.q a:hover { color: var(--blue-deep); }
+.q a.q-btn, .q a.q-btn:hover { color: #fff; }
+.q a.q-btn--ghost, .q a.q-btn--quiet, .q a.q-btn--white, .q a.q-btn.is-off, .q a.q-btn--ghost:hover, .q a.q-btn--quiet:hover, .q a.q-btn--white:hover { color: var(--ink); }
+.q .q-nav a { color: var(--ink-2); }
+.q .q-nav a:hover, .q .q-nav a.q-brand { color: var(--ink); }
+.q .q-nav a.is-on, .q .q-nav a.q-btn { color: #fff; }
+.q button { font-family: var(--font); }
+.q-status[data-state="nomodel"] i { background: var(--sun); }
+.q-status[data-state="down"] i { background: var(--stop); }
+.q-msg { padding: 14px 18px; border-radius: 18px; background: var(--sun-tint); color: var(--sun-ink); font-size: 16px; }
+.q-msg--stop { background: var(--stop-tint); color: var(--ink); }
+.q-drop.is-over { border-color: var(--blue) !important; background: var(--blue-tint) !important; }
+.q-live { width: 100%; max-height: 300px; border-radius: 20px; background: #0C1633; }
+.q-ease button.is-on { background: var(--ink) !important; color: #fff !important; }
+.hist button { margin-left: 8px; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--sunk); color: var(--ink-2); cursor: pointer; }
+.hist em + button { margin-left: 8px; }
+
+/* ---------- screen-specific rules carried over from the artboards ---------- */
+
+
+
+
+.bars { display: flex; align-items: flex-end; gap: 14px; height: 252px; }
+.bars div { flex: 1; display: flex; flex-direction: column; gap: 3px; justify-content: flex-end; height: 100%; }
+.bars span { border-radius: 4px; }
+.bars span:first-child { border-top-left-radius: 10px; border-top-right-radius: 10px; }
+.bars span:last-child { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+.heat { display: grid; grid-template-columns: repeat(7, 34px); gap: 10px; }
+.heat i { width: 34px; height: 34px; border-radius: 50%; background: #E7ECF7; }
+.heat i.on { background: #1F3FE6; }
+.heat i.now { background: #FFBE2E; }
+.hist li { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-top: 1.5px solid rgba(12, 22, 51, .1); font-size: 16px; }
+.hist li:first-child { border-top: 0; padding-top: 0; }
+.hist time { width: 54px; color: #5A6689; }
+.hist em { margin-left: auto; font-style: normal; font-size: 15px; color: #5A6689; }
+.tip { display: flex; flex-direction: column; gap: 10px; padding: 28px; border-radius: 28px; background: #fff; }
+.tip span { font-size: 14px; font-weight: 500; color: #5A6689; }
+.tip p { font-size: 16px; color: #3A4668; }
+.tip--stop { background: #FDECEA; }
+.tip--stop span { color: #C5221F; }
+

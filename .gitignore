@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.venv-*/
+.pytest_cache/
+
+# Build output
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Editors and OS
+.idea/
+.vscode/
+.claude/
+.DS_Store
+Thumbs.db
+
+# Model files: upstream weights (RTMPose, SLiM) are downloaded, never committed.
+# The only tracked weights are the trained model A in models/e02-a/.
+*.safetensors
+!models/e02-a/A-tcn.safetensors
+*.onnx
+*.tflite
+*.f32
+*.pt
+*.pth
+
+# Videos, datasets and local caches: participant data never enters Git.
+*.mp4
+!docs/media/*.mp4
+*.mov
+*.avi
+*.webm
+*.zip
+*.crdownload
+*.npz
+*.npy
+*.pkl
+*.pickle
+raw-data/
+pose-cache/
+local-data/
+ml/runs/
+ml/manifest.json
+.seriq-local/
+
+# Secrets and signing
+.env
+.env.*
+*.jks
+*.keystore
+local.properties
+
+# Platform packages
+*.apk
+*.aar

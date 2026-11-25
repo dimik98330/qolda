@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Qolda">
+  <circle cx="29" cy="29" r="17" fill="none" stroke="#1F3FE6" stroke-width="9.2"/>
+  <path d="M41 41L51.6 51.6" fill="none" stroke="#1F3FE6" stroke-width="8.6" stroke-linecap="round"/>
+  <circle cx="41" cy="41" r="6.3" fill="#FFBE2E"/>
+</svg>
