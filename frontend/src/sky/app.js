@@ -8,6 +8,7 @@ import { engine, clipHash, MAX_BYTES, TYPES } from "../core/api.js";
 import { dayKey, lastDays, byDay, streak, sum, countsOf } from "../domain/stats.js";
 import { profile } from "../platform/profile.js";
 import { androidBridge } from "../platform/android.js";
+import { lang, setLang, tr, localize, watch } from "./lang.js";
 
 // Inside the Android app the analyzer is the phone's own GPU engine behind the native bridge
 // (android/ANDROID_BRIDGE.md): the system picker hands over a token, never the file itself.
@@ -369,7 +370,7 @@ view.result = (root, $) => {
     : "Не удалось уверенно оценить. Посмотрите инструкцию ещё раз. В счёт «выполнено» попытка не идёт.";
   ticks($("ticks"), goal, today.total, { empty: "#D5DCEC", emptyOpacity: "1", last: !last.dup });
   $("plan").replaceChildren(...frag('<strong data-s="font-weight: 600">' + today.total + " из " + goal + " на сегодня.</strong> " + (today.total >= goal ? "Цель дня достигнута." : "До цели дня осталось: " + (goal - today.total))));
-  const facts = [["Модель", MODEL[last.model] || last.model], ["Где обработано", "локальный анализатор, видео не сохранено"]];
+  const facts = [["Модель", MODEL[last.model] || last.model], ["Где обработано", PHONE() ? "на этом телефоне, видео не сохранено" : "локальный анализатор, видео не сохранено"]];
   if (last.confidence != null) facts.splice(1, 0, ["Уверенность классификатора", Math.round(last.confidence * 100) + "%"]);
   if (last.reason) facts.push(["Причина", { low_confidence: "низкая уверенность", low_visibility: "плохая видимость", unscorable: "нельзя оценить" }[last.reason] || last.reason]);
   $("facts").replaceChildren(...facts.flatMap(([k, v]) => { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.className = "t-3"; dt.textContent = k; dd.textContent = v; return [dt, dd]; }));
@@ -474,14 +475,34 @@ function render() {
   }
   app.replaceChildren(root);
   paintStatus(root);
+  langSwitch(root);
   dispose = view[screen](root, $) || null;
   // On a phone the nav is one sideways-scrolling row: bring the current section into view.
   const nav = root.querySelector(".q-nav:not(.hero-nav)"), on = nav && nav.querySelector(".is-on");
   if (on && nav.scrollWidth > nav.clientWidth) nav.scrollLeft += on.getBoundingClientRect().left - nav.getBoundingClientRect().left - (nav.clientWidth - on.offsetWidth) / 2;
   if (current !== name) window.scrollTo(0, 0);
   current = name;
-  document.title = ({ welcome: "Знакомство", today: "Сегодня", check: "Проверка", result: "Результат", progress: "Прогресс", guide: "Памятка", cabinet: "Кабинет" })[screen] + " · Qolda";
+  document.title = tr(({ welcome: "Знакомство", today: "Сегодня", check: "Проверка", result: "Результат", progress: "Прогресс", guide: "Памятка", cabinet: "Кабинет" })[screen]) + " · Qolda";
+  localize(root);
 }
+/** The artboards' Рус/Қаз control: shown in the landing nav and added to every app nav. */
+function langSwitch(root) {
+  for (const nav of root.querySelectorAll(".q-nav")) {
+    let sw = nav.querySelector(".q-lang");
+    if (!sw) {
+      sw = one('<span class="q-lang" role="group" aria-label="Язык"><button type="button">Рус</button><button type="button">Қаз</button></span>');
+      const status = nav.querySelector(".q-status"); if (status) nav.insertBefore(sw, status); else nav.append(sw);
+    }
+    sw.hidden = false;
+    const [ru, kk] = sw.querySelectorAll("button");
+    [[ru, "ru"], [kk, "kk"]].forEach(([b, code]) => {
+      const on = code === lang(); b.classList.toggle("is-on", on); b.setAttribute("aria-pressed", String(on)); b.lang = code;
+      b.addEventListener("click", () => { if (code === lang()) return; store.setPrefs({ lang: code }); setLang(code); render(); });
+    });
+  }
+}
+setLang(store.state.prefs.lang);
+watch(app);
 document.documentElement.classList.toggle("calm", !!store.state.prefs.calm);
 engine.on(() => paintStatus(app));
 window.addEventListener("hashchange", render);
